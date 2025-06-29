@@ -1,20 +1,34 @@
-import type { Metadata } from 'next'
-import './globals.css'
+import type React from "react"
+import type { Metadata } from "next"
+import { Inter } from "next/font/google"
+import "./globals.css"
+import { Toaster } from "@/components/ui/toaster"
+import { CartProvider } from "@/contexts/cart-context"
+import { AuthProvider } from "@/contexts/auth-context"
+
+const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
-  generator: 'v0.dev',
+  title: "LaptopBazar - Noutbuk sotib olish va sotish",
+  description: "Eng yaxshi noutbuklarni topish va sotish uchun platforma",
+    generator: 'v0.dev'
 }
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode
-}>) {
+}) {
   return (
-    <html lang="en">
-      <body>{children}</body>
+    <html lang="uz">
+      <body className={inter.className}>
+        <AuthProvider>
+          <CartProvider>
+            {children}
+            <Toaster />
+          </CartProvider>
+        </AuthProvider>
+      </body>
     </html>
   )
 }

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { Search, Filter, Heart, MapPin, Calendar, Cpu, HardDrive, Monitor, Shield, ArrowRight } from "lucide-react"
+import { Search, Filter, Heart, MapPin, Calendar, Cpu, HardDrive, Monitor, Shield } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
@@ -19,7 +19,7 @@ import { laptops } from "@/data/laptops"
 import { useCart } from "@/contexts/cart-context"
 import { toast } from "@/hooks/use-toast"
 
-export default function HomePage() {
+export default function ProductsPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [priceRange, setPriceRange] = useState([0, 2000])
   const [selectedBrands, setSelectedBrands] = useState<string[]>([])
@@ -38,8 +38,8 @@ export default function HomePage() {
   const colors = [...new Set(laptops.map((laptop) => laptop.color))]
   const conditions = [...new Set(laptops.map((laptop) => laptop.condition))]
 
-  // Show only first 6 laptops on homepage
-  const featuredLaptops = useMemo(() => {
+  // Filter and sort laptops
+  const filteredLaptops = useMemo(() => {
     const filtered = laptops.filter((laptop) => {
       const matchesSearch =
         laptop.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -80,7 +80,7 @@ export default function HomePage() {
         break
     }
 
-    return filtered.slice(0, 6)
+    return filtered
   }, [
     searchQuery,
     priceRange,
@@ -136,24 +136,16 @@ export default function HomePage() {
     <div className="min-h-screen bg-gray-50">
       <Header />
 
-      {/* Hero Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl md:text-6xl font-bold mb-4">Eng yaxshi noutbuklarni toping</h1>
-          <p className="text-xl md:text-2xl mb-8 opacity-90">
-            Minglab noutbuk orasidan o'zingizga mos kelganini tanlang
-          </p>
-          <Link href="/products">
-            <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100">
-              Barcha mahsulotlarni ko'rish
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-          </Link>
+      {/* Page Header */}
+      <div className="bg-white py-8 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Barcha mahsulotlar</h1>
+          <p className="text-gray-600">Eng yaxshi noutbuklarni toping va sotib oling</p>
         </div>
       </div>
 
       {/* Search Section */}
-      <div className="bg-white py-6 shadow-sm">
+      <div className="bg-white py-6 shadow-sm border-t">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row gap-4 items-center">
             <div className="relative flex-1 max-w-2xl">
@@ -344,21 +336,15 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Featured Products */}
+      {/* Results */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Tavsiya etilgan noutbuklar</h2>
-          <Link href="/products">
-            <Button variant="outline">
-              Barchasini ko'rish
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </Link>
+          <h2 className="text-xl font-semibold text-gray-900">{filteredLaptops.length} ta noutbuk topildi</h2>
         </div>
 
         {/* Laptop Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {featuredLaptops.map((laptop) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {filteredLaptops.map((laptop) => (
             <Card key={laptop.id} className="overflow-hidden hover:shadow-lg transition-shadow">
               <div className="relative">
                 <Image
@@ -440,7 +426,7 @@ export default function HomePage() {
           ))}
         </div>
 
-        {featuredLaptops.length === 0 && (
+        {filteredLaptops.length === 0 && (
           <div className="text-center py-12">
             <div className="text-gray-500 text-lg mb-4">Hech narsa topilmadi</div>
             <p className="text-gray-400">Qidiruv so'zini o'zgartiring yoki filtrlarni qayta sozlang</p>

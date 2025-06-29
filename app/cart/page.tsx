@@ -1,8 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
-import { ArrowLeft, Minus, Plus, Truck, Clock } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { ArrowLeft, Minus, Plus, Truck, Clock, CheckCircle, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -12,22 +12,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator"
 import { toast } from "@/hooks/use-toast"
 import Image from "next/image"
-
-// Sample laptop data
-const laptops = [
-  {
-    id: 1,
-    title: "Acer Aspire 5 A515-57",
-    price: 850,
-    image: "/placeholder.svg?height=100&width=150",
-  },
-  {
-    id: 2,
-    title: "HP Pavilion Gaming 15",
-    price: 1200,
-    image: "/placeholder.svg?height=100&width=150",
-  },
-]
+import { Header } from "@/components/header"
+import { useCart } from "@/contexts/cart-context"
+import { useAuth } from "@/contexts/auth-context"
+import Link from "next/link"
 
 const regions = [
   "Toshkent",
@@ -47,28 +35,30 @@ const regions = [
 
 export default function CartPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const laptopId = Number.parseInt(searchParams.get("laptop") || "1")
+  const { user } = useAuth()
+  const { items, updateQuantity, removeFromCart, getTotalPrice, clearCart } = useCart()
 
-  const [quantity, setQuantity] = useState(1)
   const [deliveryType, setDeliveryType] = useState("standard")
   const [formData, setFormData] = useState({
-    fullName: "",
-    phone: "",
+    fullName: user?.name || "",
+    phone: user?.phone || "",
     region: "",
     address: "",
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [orderSubmitted, setOrderSubmitted] = useState(false)
 
-  const laptop = laptops.find((l) => l.id === laptopId) || laptops[0]
   const deliveryCost = deliveryType === "express" ? 30 : 20
-  const subtotal = laptop.price * quantity
+  const subtotal = getTotalPrice()
   const total = subtotal + deliveryCost
 
-  const handleQuantityChange = (change: number) => {
-    const newQuantity = quantity + change
-    if (newQuantity >= 1 && newQuantity <= 10) {
-      setQuantity(newQuantity)
+  const handleQuantityChange = (id: number, change: number) => {
+    const item = items.find((i) => i.id === id)
+    if (item) {
+      const newQuantity = item.quantity + change
+      if (newQuantity >= 1 && newQuantity <= 10) {
+        updateQuantity(id, newQuantity)
+      }
     }
   }
 
@@ -80,6 +70,16 @@ export default function CartPage() {
   }
 
   const handleSubmitOrder = async () => {
+    if (!user) {
+      toast({
+        title: "Kirish talab qilinadi",
+        description: "Buyurtma berish uchun tizimga kiring",
+        variant: "destructive",
+      })
+      router.push("/login")
+      return
+    }
+
     // Validate form
     if (!formData.fullName || !formData.phone || !formData.region || !formData.address) {
       toast({
@@ -95,80 +95,134 @@ export default function CartPage() {
     // Simulate API call
     setTimeout(() => {
       setIsSubmitting(false)
+      setOrderSubmitted(true)
+      clearCart()
       toast({
         title: "Buyurtma qabul qilindi!",
         description: "Tez orada siz bilan bog'lanamiz",
         className: "bg-green-50 border-green-200",
       })
-
-      // Redirect to success page or home
-      setTimeout(() => {
-        router.push("/")
-      }, 2000)
     }, 1500)
+  }
+
+  if (items.length === 0 && !orderSubmitted) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Card className="w-full max-w-md">
+            <CardContent className="p-8 text-center">
+              <div className="text-6xl mb-4">🛒</div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Savat bo'sh</h2>
+              <p className="text-gray-600 mb-6">Hozircha savatda hech qanday mahsulot yo'q</p>
+              <Link href="/products">
+                <Button className="w-full">Mahsulotlarni ko'rish</Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
+
+  if (orderSubmitted) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Card className="w-full max-w-md">
+            <CardContent className="p-8 text-center">
+              <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Buyurtma qabul qilindi!</h2>
+              <p className="text-gray-600 mb-6">
+                Buyurtma raqami: #{Math.floor(Math.random() * 100000)}
+                <br />
+                Tez orada siz bilan bog'lanamiz
+              </p>
+              <div className="space-y-2">
+                <Button onClick={() => router.push("/")} className="w-full">
+                  Bosh sahifaga qaytish
+                </Button>
+                <Button variant="outline" onClick={() => setOrderSubmitted(false)} className="w-full">
+                  Yana buyurtma berish
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" size="sm" onClick={() => router.back()} className="flex items-center gap-2">
-                <ArrowLeft className="h-4 w-4" />
-                Orqaga
-              </Button>
-              <h1 className="text-2xl font-bold text-blue-600">LaptopBazar</h1>
-            </div>
-            <div className="text-lg font-semibold text-gray-700">Buyurtma berish</div>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Breadcrumb */}
+        <div className="flex items-center gap-2 text-sm text-gray-600 mb-6">
+          <Button variant="ghost" size="sm" onClick={() => router.back()} className="flex items-center gap-2 p-0">
+            <ArrowLeft className="h-4 w-4" />
+            Orqaga
+          </Button>
+          <span>/</span>
+          <span className="text-gray-900">Savat</span>
+        </div>
+
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">Buyurtma berish</h1>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Cart Items */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Product Card */}
+            {/* Product Cards */}
             <Card>
               <CardHeader>
-                <CardTitle>Savat</CardTitle>
+                <CardTitle>Savat ({items.length} mahsulot)</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-4">
-                  <Image
-                    src={laptop.image || "/placeholder.svg"}
-                    alt={laptop.title}
-                    width={150}
-                    height={100}
-                    className="w-24 h-16 object-cover rounded-md"
-                  />
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-lg">{laptop.title}</h3>
-                    <div className="text-2xl font-bold text-blue-600">${laptop.price}</div>
-                  </div>
-                  <div className="flex items-center gap-2">
+              <CardContent className="space-y-4">
+                {items.map((item) => (
+                  <div key={item.id} className="flex items-center gap-4 p-4 border rounded-lg">
+                    <Image
+                      src={item.image || "/placeholder.svg"}
+                      alt={item.title}
+                      width={80}
+                      height={60}
+                      className="w-20 h-15 object-cover rounded-md"
+                    />
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-lg">{item.title}</h3>
+                      <div className="text-xl font-bold text-blue-600">${item.price}</div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleQuantityChange(item.id, -1)}
+                        disabled={item.quantity <= 1}
+                      >
+                        <Minus className="h-4 w-4" />
+                      </Button>
+                      <span className="w-8 text-center font-medium">{item.quantity}</span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleQuantityChange(item.id, 1)}
+                        disabled={item.quantity >= 10}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       size="sm"
-                      onClick={() => handleQuantityChange(-1)}
-                      disabled={quantity <= 1}
+                      onClick={() => removeFromCart(item.id)}
+                      className="text-red-500 hover:text-red-700"
                     >
-                      <Minus className="h-4 w-4" />
-                    </Button>
-                    <span className="w-8 text-center font-medium">{quantity}</span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleQuantityChange(1)}
-                      disabled={quantity >= 10}
-                    >
-                      <Plus className="h-4 w-4" />
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
-                </div>
+                ))}
               </CardContent>
             </Card>
 
@@ -275,7 +329,7 @@ export default function CartPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex justify-between">
-                  <span>Mahsulot ({quantity} dona):</span>
+                  <span>Mahsulotlar:</span>
                   <span>${subtotal}</span>
                 </div>
                 <div className="flex justify-between">
