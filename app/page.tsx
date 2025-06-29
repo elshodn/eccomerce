@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label"
 import { Slider } from "@/components/ui/slider"
 import { Separator } from "@/components/ui/separator"
 import Image from "next/image"
+import { useRouter } from "next/navigation"
 
 // Sample laptop data
 const laptops = [
@@ -132,6 +133,8 @@ export default function LaptopMarketplace() {
   const [screenSizeRange, setScreenSizeRange] = useState([10, 20])
   const [sortBy, setSortBy] = useState("newest")
   const [favorites, setFavorites] = useState<number[]>([])
+
+  const router = useRouter()
 
   // Get unique values for filters
   const brands = [...new Set(laptops.map((laptop) => laptop.brand))]
@@ -523,7 +526,9 @@ export default function LaptopMarketplace() {
                   </div>
                 </div>
 
-                <Button className="w-full mt-4">Batafsil ko'rish</Button>
+                <Button className="w-full mt-4" onClick={() => router.push(`/laptop/${laptop.id}`)}>
+                  Batafsil ko'rish
+                </Button>
               </CardContent>
             </Card>
           ))}
